@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Saurabh(dr3dd)</title>
+    <description>blog</description>
+    <link>http://dr3dd.tk//</link>
+    <atom:link href="http://dr3dd.tk//feed.xml" rel="self" type="application/rss+xml" />
+    <pubDate>Sun, 02 Dec 2018 18:15:35 +0530</pubDate>
+    <lastBuildDate>Sun, 02 Dec 2018 18:15:35 +0530</lastBuildDate>
+    <generator>Jekyll v3.8.5</generator>
+    
+      <item>
+        <title>Simple Attack On AES-ECB Mode</title>
+        <description>&lt;h2&gt;PicoCTF-18 (SpyFi ,300 pt)&lt;/h2&gt;
+
+&lt;p&gt;In this challange they use &lt;strong&gt;AES-ECB&lt;/strong&gt; mode which we know it is quite vulnerable.&lt;/p&gt;
+
+&lt;p&gt;If you dont know how &lt;strong&gt;AES-ECB&lt;/strong&gt; works i would suggest to read about first.
+&lt;a href=&quot;https://en.wikipedia.org/wiki/Block_cipher_mode_of_operation#Electronic_Codebook_(ECB)&quot;&gt;AES-ECB&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;AES-ECB Encryption and Decryption flow chart&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/post_pic/601px-ECB_encryption.svg.jpg&quot; alt=&quot;alt text&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/post_pic/601px-ECB_decryption.svg.jpg&quot; alt=&quot;alt text&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;Now come to the challange&lt;/strong&gt;&lt;/p&gt;
+
+&lt;div class=&quot;language-python highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c1&quot;&gt;#!/usr/bin/python2 -u
+&lt;/span&gt;&lt;span class=&quot;kn&quot;&gt;from&lt;/span&gt; &lt;span class=&quot;nn&quot;&gt;Crypto.Cipher&lt;/span&gt; &lt;span class=&quot;kn&quot;&gt;import&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;AES&lt;/span&gt;
+
+&lt;span class=&quot;n&quot;&gt;agent_code&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&quot;&quot;&quot;flag&quot;&quot;&quot;&lt;/span&gt;
+
+&lt;span class=&quot;k&quot;&gt;def&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;pad&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;message&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;):&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;len&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;message&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;%&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;16&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;!=&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;message&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;message&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;+&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;'0'&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;16&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;len&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;message&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;%&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;16&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;    &lt;span class=&quot;c1&quot;&gt;#block-size = 16
+&lt;/span&gt;    &lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;message&lt;/span&gt;
+
+&lt;span class=&quot;k&quot;&gt;def&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;encrypt&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;key&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;plain&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;):&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;cipher&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;AES&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;new&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;key&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;decode&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'hex'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;AES&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MODE_ECB&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;cipher&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;encrypt&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;plain&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;encode&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'hex'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+
+&lt;span class=&quot;n&quot;&gt;welcome&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&quot;Welcome, Agent 006!&quot;&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;print&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;welcome&lt;/span&gt;
+
+&lt;span class=&quot;n&quot;&gt;sitrep&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;raw_input&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;Please enter your situation report: &quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;message&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;'''Agent,
+Greetings. My situation report is as follows:
+{0}                                                     #here is our input message
+My agent identifying code is: {1}.                      #flag
+Down with the Soviets,
+006'''&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;format&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;sitrep&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;agent_code&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+
+&lt;span class=&quot;n&quot;&gt;message&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;pad&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;message&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;print&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;encrypt&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&quot;&quot;&quot;key&quot;&quot;&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;message&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;lets send input message :
+&lt;code class=&quot;highlighter-rouge&quot;&gt;AAAAAAAAAAA + BBBBBBBBBBBBBBBB + CCCCCCCCCCCCCCCC  &amp;lt;--   'A'x11 (offset) + 'B'x16 + 'C'x16&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;suppose flag is : &lt;code class=&quot;highlighter-rouge&quot;&gt;picoCTF{ABCDEFG}&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;Divide message in blocks of 16&lt;/strong&gt;&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;```
+   'Agent,\nGreetings' &amp;lt;--- 16  (Block 1)
+   '. My situation r'  &amp;lt;--- 16  (Block 2)
+   'eport is as foll'  &amp;lt;--- 16  (Block 3)
+   'ows:\nAAAAAAAAAAA' &amp;lt;--- 16  (Block 4)
+   'BBBBBBBBBBBBBBBB'  &amp;lt;--- 16  (Block 5)
+   'CCCCCCCCCCCCCCCC'  &amp;lt;--- 16  (Block 6)
+   '\nMy agent identi' &amp;lt;--- 16  (Block 7)
+   'fying code is:  '  &amp;lt;--- 16  (Block 8)  &amp;lt;---known Block
+   'picoCTF{ABCDEFG}'  &amp;lt;--- 16  (Block 9)  &amp;lt;---unknown Block
+   '.Down with the S'  &amp;lt;--- 16  (Block 10) &amp;lt;---known Block
+``` Now if we send input with one less 'C' then blocks is:
+
+
+```
+   'Agent,\nGreetings'   &amp;lt;--- 16  (Block 1)
+   '. My situation r'    &amp;lt;--- 16  (Block 2)
+   'eport is as foll'    &amp;lt;--- 16  (Block 3)
+   'ows:\nAAAAAAAAAAA'   &amp;lt;--- 16  (Block 4)
+   'BBBBBBBBBBBBBBBB'    &amp;lt;--- 16  (Block 5)
+   'CCCCCCCCCCCCCCC\n'   &amp;lt;--- 16  (Block 6)
+   'My agent identif'    &amp;lt;--- 16  (Block 7)
+   'ying code is:  p'    &amp;lt;--- 16  (Block 8)    &amp;lt;-- Now we know block 8 has our one byte flag but it is encrypted we dont know what the char is.
+   'icoCTF{ABCDEFG}.'    &amp;lt;--- 16  (Block 9)    &amp;lt;---unknown block 
+   'Down with the So'    &amp;lt;--- 16  (Block 10)   &amp;lt;---known Block
+```
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;&lt;strong&gt;Now we know the encryption of block 8 in which last byte is our flag’s first byte, to know what byte is we send input like this&lt;/strong&gt;&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;```
+   'Agent,\nGreetings'    &amp;lt;--- 16  (Block 1)
+   '. My situation r'     &amp;lt;--- 16  (Block 2)
+   'eport is as foll'     &amp;lt;--- 16  (Block 3)
+   'ows:\nAAAAAAAAAAA'    &amp;lt;--- 16  (Block 4)
+   'ying code is:  %s'    &amp;lt;--- 16  (Block 5)    &amp;lt;--- replace %s to char in range(32,128)   
+   'CCCCCCCCCCCCCCC\n'    &amp;lt;--- 16  (Block 6)
+   'My agent identif'     &amp;lt;--- 16  (Block 7)
+   'ying code is:  p'     &amp;lt;--- 16  (Block 8)    &amp;lt;--- Now we know block 8 has our one byte flag
+   'icoCTF{ABCDEFG}.'     &amp;lt;--- 16  (Block 9)    &amp;lt;--- unknown block 
+   'Down with the So'     &amp;lt;--- 16  (Block 10)   &amp;lt;---known Block
+```
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;&lt;strong&gt;What we have to do is to check the encryption of block 5 and block 8 over the loop if it is same means the char we send is our first char of flag!! Whooho…!! we just get the 1st byte of unknown block without knowing key, lets repeat again same method with 2 ‘C’ less.&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;after 1st loop we know flag starting with  : “p”&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;Now for second byte send input like this&lt;/strong&gt;&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;```
+   'Agent,\nGreetings'    &amp;lt;--- 16  (Block 1)
+   '. My situation r'     &amp;lt;--- 16  (Block 2)
+   'eport is as foll'     &amp;lt;--- 16  (Block 3)
+   'ows:\nAAAAAAAAAAA'    &amp;lt;--- 16  (Block 4)
+   'ing code is: p%s'     &amp;lt;--- 16  (Block 5)    &amp;lt;--- replace %s to char in range(32,128)   
+   'CCCCCCCCCCCCCC\nM'    &amp;lt;--- 16  (Block 6)
+   'y agent identify'     &amp;lt;--- 16  (Block 7)
+   'ing code is:  pi'     &amp;lt;--- 16  (Block 8)    &amp;lt;--- Now we know block 8 has our two byte flag in which one we know i.e &quot;p&quot; and other we have to find out in second loop.
+   'coCTF{ABCDEFG}.D'     &amp;lt;--- 16  (Block 9)    &amp;lt;--- unknown block 
+   'own with the Sov'     &amp;lt;--- 16  (Block 10)   &amp;lt;--- known Block
+```
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;&lt;strong&gt;Repeat process again check encryption of block 5 and block 8 if it same means the second char we send is our flag’s second char..!!&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;after 2nd loop we know flag starting with : “pi”&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;Same process we have to do until we get full flag!!!&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;My Script for this challenge&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;```python
+ #!/usr/bin/python2 -u
+from pwn import * 
+flag = “picoCTF{“&lt;/p&gt;
+
+&lt;p&gt;for j in range(1,14):
+    print(“………………………………………….”,j)
+    p = remote(‘2018shell1.picoctf.com’, 37131)
+    p.recvuntil(‘Please enter your situation report: ‘)
+    my_msg = “A”&lt;em&gt;11+”B”&lt;/em&gt;(25-j)
+    p.sendline(my_msg)
+    enc_msg = p.recv(1024).decode(‘hex’)
+    p.close()&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;for i in range(32,128):
+    q = remote('2018shell1.picoctf.com', 37131)
+    q.recvuntil('Please enter your situation report: ')
+    msg = &quot;A&quot;*11+&quot;B&quot;*(14-j) + flag + chr(i)
+
+    q.sendline(msg)
+    y = q.recv(1024).decode('hex')
+    q.close()
+    if y[80:96] == enc_msg[128:144]:
+        flag += chr(i)
+        break print(flag)
+
+        #picoCTF{@g3nt6_1$_th3_c00l3$t_2432504}
+        
+        ```
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+</description>
+        <pubDate>Thu, 11 Oct 2018 17:01:19 +0530</pubDate>
+        <link>http://dr3dd.tk//cryptography/2018/10/11/Simple-Attack-On-AES-ECB-Mode/</link>
+        <guid isPermaLink="true">http://dr3dd.tk//cryptography/2018/10/11/Simple-Attack-On-AES-ECB-Mode/</guid>
+        
+        <category>Crypto</category>
+        
+        <category>PicoCTF-18</category>
+        
+        <category>SpyFi</category>
+        
+        <category>AES-ECB</category>
+        
+        
+        <category>Cryptography</category>
+        
+      </item>
+    
+  </channel>
+</rss>
